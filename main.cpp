@@ -1,4 +1,5 @@
 #include <phpcpp.h>
+#include <iostream>
 
 //演示阶乘
 Php::Value pm_factorial(Php::Parameters &params)
@@ -16,6 +17,44 @@ Php::Value pm_factorial(Php::Parameters &params)
 Php::Value pm_add(Php::Parameters &params)
 {
     return params[0] + params[1];
+}
+
+//演示时间类型操作
+void pm_datetype(Php::Parameters &params)
+{
+    Php::Value time = params[0];
+	Php::out <<"param type is : " << time.type() << std::endl;
+	Php::out <<"current time is : " << time.call("format","Y-m-d H:i:s") << std::endl;
+}
+
+//演示通用的冒泡排序类
+Php::Value pm_sort(Php::Parameters &params)
+{
+	int i,j;
+	Php::Value array = params[0];
+	Php::Value cmpfunc = params[1];
+	int len = array.size();
+	Php::Value result,temp;
+	for(i=0;i<len;i++){
+		for(j=i+1;j<len;j++){
+			// Php::Value 类重载了运算符 (), 使得用起来就跟内置函数一样好用
+			 result = cmpfunc(array.get(i), array.get(j));
+			 if(result.boolValue()){  //如果比较结果为true则冒泡
+				temp = array[i];
+				array.set(i,array.get(j));
+				array.set(j,temp);
+			 }
+		}
+	}
+	return array;
+}
+
+//测试引用类型参数
+void pm_swap(Php::Parameters &params)
+{
+    Php::Value temp = params[0];
+    params[0] = params[1];
+    params[1] = temp;
 }
 
 /**
@@ -40,6 +79,25 @@ extern "C" {
             Php::ByVal("a", Php::Type::Float),
             Php::ByVal("b", Php::Type::Float)
 		});
+		
+		myExtension.add<pm_datetype>("pm_datetype", {
+			/****
+				"time" : 表示参数名称，用于返回的异常信息中使用
+				"DateTime"：参数对象的类名
+				true ：表示该参数是必须的
+			****/
+			Php::ByVal("time", "DateTime", true)
+		});
+		
+		myExtension.add<pm_sort>("pm_sort", {
+            Php::ByVal("a", Php::Type::Array),
+            Php::ByVal("b", Php::Type::Callable)
+		});
+		
+		myExtension.add<pm_swap>("pm_swap", {
+            Php::ByRef("a", Php::Type::Numeric),
+            Php::ByRef("b", Php::Type::Numeric)
+        });
 		
         // 返回扩展对象指针
         return myExtension;
